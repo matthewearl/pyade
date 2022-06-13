@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Callable, Union, List, Tuple, Any
+from typing import Callable, Union, List, Tuple, Any, Optional
 
 
 def keep_bounds(population: np.ndarray,
@@ -21,7 +21,8 @@ def keep_bounds(population: np.ndarray,
 
 
 def init_population(population_size: int, individual_size: int,
-                    bounds: Union[np.ndarray, list]) -> np.ndarray:
+                    bounds: Union[np.ndarray, list],
+                    init: Optional[np.ndarray]) -> np.ndarray:
     """
     Creates a random population within its constrained bounds.
     :param population_size: Number of individuals desired in the population.
@@ -35,8 +36,18 @@ def init_population(population_size: int, individual_size: int,
     :return: Initialized population.
     """
 
-    population = np.random.randn(population_size, individual_size)
+    if init is None:
+        population = np.random.randn(population_size, individual_size)
+    else:
+        population = init
+        assert init.shape == (population_size, individual_size)
     return keep_bounds(population, bounds)
+
+
+def vectorized(f):
+    """Mark a fitness function as being vectorized"""
+    f.__vectorized = True
+    return f
 
 
 def apply_fitness(population: np.ndarray,
@@ -53,10 +64,19 @@ def apply_fitness(population: np.ndarray,
     :rtype np.ndarray
     :return: Numpy array of fitness for each individual.
     """
+    if getattr(func, '__vectorized', False):
+        vectorized = True
+
     if opts is None:
-        return np.array([func(individual) for individual in population])
+        if vectorized:
+            return func(population)
+        else:
+            return np.array([func(individual) for individual in population])
     else:
-        return np.array([func(individual, opts) for individual in population])
+        if vectorized:
+            return func(population, opts)
+        else:
+            return np.array([func(individual, opts) for individual in population])
 
 
 def __parents_choice(population: np.ndarray, n_parents: int) -> np.ndarray:

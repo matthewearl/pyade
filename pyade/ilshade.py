@@ -2,7 +2,7 @@ import pyade.commons
 import numpy as np
 import scipy.stats
 import random
-from typing import Callable, Union, Dict, Any
+from typing import Callable, Union, Dict, Any, Optional
 
 
 def get_default_params(dim: int):
@@ -15,13 +15,15 @@ def get_default_params(dim: int):
         :rtype dict
     """
     return {'population_size': 12 * dim, 'individual_size': dim, 'memory_size': 6,
-            'max_evals': 10000 * dim, 'callback': None, 'seed': None, 'opts': None}
+            'max_evals': 10000 * dim, 'callback': None, 'seed': None,
+            'opts': None, 'init': None}
 
 
 def apply(population_size: int, individual_size: int, bounds: np.ndarray,
           func: Callable[[np.ndarray], float], opts: Any,
           memory_size: int, callback: Callable[[Dict], Any],
-          max_evals: int, seed: Union[int, None]) -> [np.ndarray, int]:
+          max_evals: int, seed: Union[int, None],
+          init: Optional[np.ndarray]) -> [np.ndarray, int]:
     """
     Applies the iL-SHADE differential evolution algorithm.
     :param population_size: Size of the population.
@@ -71,7 +73,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     random.seed(seed)
 
     # 1. Initialization
-    population = pyade.commons.init_population(population_size, individual_size, bounds)
+    population = pyade.commons.init_population(population_size, individual_size, bounds, init)
     current_size = population_size
     m_cr = np.ones(memory_size) * .8
     m_f = np.ones(memory_size) * .5
