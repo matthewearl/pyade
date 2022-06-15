@@ -75,12 +75,11 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     # 1. Initialization
     population = pyade.commons.init_population(population_size, individual_size, bounds, init)
     current_size = population_size
-    m_cr = np.ones(population_size) * .8
-    m_f = np.ones(population_size) * .3
+    m_cr = np.ones(memory_size) * .8
+    m_f = np.ones(memory_size) * .3
     k = 0
     fitness = pyade.commons.apply_fitness(population, func, opts)
 
-    memory_size = population_size
     memory_indexes = list(range(memory_size))
     num_evals = population_size
     current_generation = 0
@@ -156,8 +155,8 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
             if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
                 m_cr[k] = 1   # `1` represents ⊥ in the paper
             else:
-                m_cr[k] = (commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
-            m_f[k] = (commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
+                m_cr[k] = (pyade.commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
+            m_f[k] = (pyade.commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
 
             k += 1
             if k == memory_size:
