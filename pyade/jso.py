@@ -76,8 +76,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     population = pyade.commons.init_population(population_size, individual_size, bounds, init)
     current_size = population_size
     m_cr = np.ones(population_size) * .8
-    m_f = np.ones(population_size) * .5
-    archive = []
+    m_f = np.ones(population_size) * .3
     k = 0
     fitness = pyade.commons.apply_fitness(population, func, opts)
 
@@ -101,13 +100,14 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     while num_evals < max_evals:
         # 2.1 Adaptation
         r = np.random.choice(memory_indexes, current_size)
-        m_cr[- 1] = 0.9
+        m_cr[-1] = 0.9
         m_f[-1] = 0.9
 
         cr = np.random.normal(m_cr[r], 0.1, current_size)
         cr = np.clip(cr, 0, 1)
         cr[m_cr[r] == 1] = 0
-        cr[m_cr[r] < 0] = 0
+        assert np.all(m_cr >= 0)
+        assert np.all(m_cr <= 1)
 
         if current_generation < (max_iters / 4):
             cr[cr < 0.7] = 0.7
@@ -135,8 +135,6 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         else:
             weighted *= 1.2
 
-        weighted = np.clip(weighted, 0, 1)
-        # print(min(fitness), min(cr), max(cr), min(f), max(f))
         mutated = pyade.commons.current_to_pbest_weighted_mutation(population, fitness, f.reshape(len(f), 1),
                                                                    weighted, p, bounds)
         crossed = pyade.commons.crossover(population, mutated, cr.reshape(len(f), 1))
@@ -147,21 +145,19 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
                                                       fitness, c_fitness, return_indexes=True)
 
         # 2.3 Adapt for next generation
-        archive.extend(population[indexes])
-
         if len(indexes) > 0:
-            if len(archive) > population_size:
-                archive = random.sample(archive, population_size)
-
-            weights = np.abs(fitness[indexes] - c_fitness[indexes])
+            weights = fitness[indexes] - c_fitness[indexes]
+            assert np.all(weights > 0)
+            if np.any(np.isinf(weights)):
+                weights = np.isinf(weights).astype(weights.dtype)
             weights /= np.sum(weights)
+            print(weights)
 
-            if max(cr) != 0:
-                m_cr[k] = (np.sum(weights * cr[indexes]**2) / np.sum(weights * cr[indexes]) + m_cr[-1]) / 2
+            if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
+                m_cr[k] = 1   # `1` represents ⊥ in the paper
             else:
-                m_cr[k] = 1
-
-            m_f[k] = np.sum(weights * f[indexes]**2) / np.sum(weights * f[indexes])
+                m_cr[k] = (commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
+            m_f[k] = (commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
 
             k += 1
             if k == memory_size:
@@ -175,8 +171,6 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
             best_indexes = np.argsort(fitness)[:current_size]
             population = population[best_indexes]
             fitness = fitness[best_indexes]
-            if k == memory_size:
-                k = 0
 
         # Adapt p
         p = (p_max - p_min) / max_evals * num_evals + p_min

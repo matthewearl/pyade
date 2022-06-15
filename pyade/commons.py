@@ -2,6 +2,11 @@ import numpy as np
 from typing import Callable, Union, List, Tuple, Any, Optional
 
 
+def mean_wl(weights, vals):
+    """Weighted lehmer mean"""
+    return np.sum(weights * vals ** 2) / np.sum(weights * vals)
+
+
 def keep_bounds(population: np.ndarray,
                 bounds: np.ndarray) -> np.ndarray:
     """

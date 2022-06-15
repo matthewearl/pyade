@@ -19,9 +19,6 @@ def get_default_params(dim: int):
             'opts': None, 'init': None}
 
 
-def _mean_wl(weights, vals):
-    # weighted Lehmer mean
-    return np.sum(weights * vals ** 2) / np.sum(weights * vals)
 
 
 def apply(population_size: int, individual_size: int, bounds: np.ndarray,
@@ -149,8 +146,8 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
             if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
                 m_cr[k] = 1   # `1` represents ⊥ in the paper
             else:
-                m_cr[k] = (_mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
-            m_f[k] = (_mean_wl(weights, f[indexes]) + m_f[k]) / 2
+                m_cr[k] = (commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
+            m_f[k] = (commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
 
             k += 1
             if k == memory_size:
