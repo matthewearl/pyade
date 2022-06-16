@@ -2,7 +2,7 @@ import pyade.commons
 import numpy as np
 import scipy.stats
 import random
-from typing import Callable, Union, Dict, Any
+from typing import Callable, Union, Dict, Any, Optional
 
 
 def get_default_params(dim: int):
@@ -15,13 +15,17 @@ def get_default_params(dim: int):
         :rtype dict
     """
     return {'population_size': 12 * dim, 'individual_size': dim, 'memory_size': 6,
-            'max_evals': 10000 * dim, 'callback': None, 'seed': None, 'opts': None}
+            'max_evals': 10000 * dim, 'callback': None, 'seed': None,
+            'opts': None, 'init': None}
+
+
 
 
 def apply(population_size: int, individual_size: int, bounds: np.ndarray,
           func: Callable[[np.ndarray], float], opts: Any,
           memory_size: int, callback: Callable[[Dict], Any],
-          max_evals: int, seed: Union[int, None]) -> [np.ndarray, int]:
+          max_evals: int, seed: Union[int, None],
+          init: Optional[np.ndarray]) -> [np.ndarray, int]:
     """
     Applies the iL-SHADE differential evolution algorithm.
     :param population_size: Size of the population.
@@ -71,11 +75,10 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     random.seed(seed)
 
     # 1. Initialization
-    population = pyade.commons.init_population(population_size, individual_size, bounds)
+    population = pyade.commons.init_population(population_size, individual_size, bounds, init)
     current_size = population_size
     m_cr = np.ones(memory_size) * .8
     m_f = np.ones(memory_size) * .5
-    archive = []
     k = 0
     fitness = pyade.commons.apply_fitness(population, func, opts)
 
@@ -99,14 +102,15 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     while num_evals < max_evals:
         # 2.1 Adaptation
         r = np.random.choice(memory_indexes, current_size)
-        m_cr[- 1] = 0.9
+        m_cr[-1] = 0.9
         m_f[-1] = 0.9
 
         cr = np.random.normal(m_cr[r], 0.1, current_size)
         cr = np.clip(cr, 0, 1)
         cr[m_cr[r] == 1] = 0
+
         f = scipy.stats.cauchy.rvs(loc=m_f[r], scale=0.1, size=current_size)
-        f[f > 1] = 0
+        f[f > 1] = 1
         p_i = np.ones(current_size) * p
 
         while sum(f <= 0) != 0:
@@ -131,21 +135,19 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
                                                       fitness, c_fitness, return_indexes=True)
 
         # 2.3 Adapt for next generation
-        archive.extend(population[indexes])
-
         if len(indexes) > 0:
-            if len(archive) > population_size:
-                archive = random.sample(archive, population_size)
-
-            weights = np.abs(fitness[indexes] - c_fitness[indexes])
+            weights = fitness[indexes] - c_fitness[indexes]
+            assert np.all(weights > 0)
+            if np.any(np.isinf(weights)):
+                weights = np.isinf(weights).astype(weights.dtype)
             weights /= np.sum(weights)
+            print(weights)
 
-            if max(cr) != 0:
-                m_cr[k] = (np.sum(weights * cr[indexes]**2) / np.sum(weights * cr[indexes]) + m_cr[-1]) / 2
+            if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
+                m_cr[k] = 1   # `1` represents ⊥ in the paper
             else:
-                m_cr[k] = 1
-
-            m_f[k] = np.sum(weights * f[indexes]**2) / np.sum(weights * f[indexes])
+                m_cr[k] = (pyade.commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
+            m_f[k] = (pyade.commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
 
             k += 1
             if k == memory_size:
@@ -159,8 +161,6 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
             best_indexes = np.argsort(fitness)[:current_size]
             population = population[best_indexes]
             fitness = fitness[best_indexes]
-            if k == memory_size:
-                k = 0
 
         # Adapt p
         p = (p_max - p_min) / max_evals * num_evals + p_min

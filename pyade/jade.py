@@ -14,13 +14,14 @@ def get_default_params(dim: int) -> dict:
         """
     pop_size = 10 * dim
     return {'max_evals': 10000 * dim, 'individual_size': dim, 'callback': None,
-            'population_size': pop_size, 'c': 0.1, 'p': max(.05, 3/pop_size), 'seed': None}
+            'population_size': pop_size, 'c': 0.1, 'p': max(.05, 3/pop_size), 'seed': None,
+            'init': None}
 
 
 def apply(population_size: int, individual_size: int, bounds: np.ndarray,
           func: Callable[[np.ndarray], float], opts: Any,
           p: Union[int, float], c: Union[int, float], callback: Callable[[Dict], Any],
-          max_evals: int, seed: Union[int, None]) -> [np.ndarray, int]:
+          max_evals: int, seed: Union[int, None], init: np.ndarray) -> [np.ndarray, int]:
     """
     Applies the JADE Differential Evolution algorithm.
     :param population_size: Size of the population.
@@ -76,7 +77,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     np.random.seed(seed)
 
     # 1. Init population
-    population = pyade.commons.init_population(population_size, individual_size, bounds)
+    population = pyade.commons.init_population(population_size, individual_size, bounds, init)
     u_cr = 0.5
     u_f = 0.6
 
