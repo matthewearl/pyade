@@ -310,8 +310,9 @@ def crossover(population: np.ndarray, mutated: np.ndarray,
     :return: Current generation population.
     """
     chosen = np.random.rand(*population.shape)
-    j_rand = np.random.randint(0, population.shape[1])
-    chosen[j_rand::population.shape[1]] = 0
+    j_rand = np.random.randint(0, population.shape[1], size=population.shape[0])
+    chosen[np.arange(population.shape[0]), j_rand] = 0
+
     return np.where(chosen <= cr, mutated, population)
 
 def exponential_crossover(population: np.ndarray, mutated: np.ndarray,
