@@ -113,15 +113,9 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         elif current_generation < (max_iters / 2):
             cr[cr < 0.6] = 0.6
 
-        f = scipy.stats.cauchy.rvs(loc=m_f[r], scale=0.1, size=current_size)
-        while sum(f <= 0) != 0:
-            r = np.random.choice(memory_indexes, sum(f <= 0))
-            f[f <= 0] = scipy.stats.cauchy.rvs(loc=m_f[r], scale=0.1, size=sum(f <= 0))
-
-        f = np.clip(f, 0, 1)
+        f = pyade.commands.truncated_cauchy(m_f[r], 0.1, current_size)
         if current_generation < 0.6 * max_iters:
             f = np.clip(f, 0, 0.7)
-
 
         # 2.2 Common steps
         # 2.2.1 Calculate weights for mutation
