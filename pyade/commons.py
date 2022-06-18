@@ -1,3 +1,5 @@
+import scipy.stats
+
 import numpy as np
 from typing import Callable, Union, List, Tuple, Any, Optional
 
@@ -5,6 +7,18 @@ from typing import Callable, Union, List, Tuple, Any, Optional
 def mean_wl(weights, vals):
     """Weighted lehmer mean"""
     return np.sum(weights * vals ** 2) / np.sum(weights * vals)
+
+
+def truncated_cauchy(loc: np.ndarray, scale: float, size: int):
+    """Clip if too high, but redraw if too low"""
+    assert loc.shape == (size,)
+    f = scipy.stats.cauchy.rvs(loc=loc, scale=scale, size=size)
+    f[f > 1] = 1
+    while np.any(f < 0):
+        new = scipy.stats.cauchy.rvs(loc=loc[f < 0], scale=scale, size=np.sum(f < 0))
+        new[new > 1] = 1
+        f[f < 0] = new
+    return f
 
 
 def keep_bounds(population: np.ndarray,

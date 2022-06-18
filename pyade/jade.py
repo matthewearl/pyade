@@ -87,8 +87,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     for current_generation in range(max_iters):
         # 2.1 Generate parameter values for current generation
         cr = np.random.normal(u_cr, 0.1, population_size)
-        f = np.random.rand(population_size // 3) * 1.2
-        f = np.concatenate((f, np.random.normal(u_f, 0.1, population_size - (population_size // 3))))
+        f = pyade.commons.truncated_cauchy(np.ones(population_size) * u_f, 0.1, population_size)
 
         # 2.2 Common steps
         mutated = pyade.commons.current_to_pbest_mutation(population, fitness, f.reshape(len(f), 1), p, bounds)
