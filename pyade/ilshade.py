@@ -109,13 +109,8 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         cr = np.clip(cr, 0, 1)
         cr[m_cr[r] == 1] = 0
 
-        f = scipy.stats.cauchy.rvs(loc=m_f[r], scale=0.1, size=current_size)
-        f[f > 1] = 1
+        f = pyade.commands.truncated_cauchy(m_f[r], 0.1, current_size)
         p_i = np.ones(current_size) * p
-
-        while sum(f <= 0) != 0:
-            r = np.random.choice(memory_indexes, sum(f <= 0))
-            f[f <= 0] = scipy.stats.cauchy.rvs(loc=m_f[r], scale=0.1, size=sum(f <= 0))
 
         if current_generation < (max_iters / 4):
             cr[cr < 0.5] = 0.5
