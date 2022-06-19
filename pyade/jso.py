@@ -113,7 +113,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         elif current_generation < (max_iters / 2):
             cr[cr < 0.6] = 0.6
 
-        f = pyade.commands.truncated_cauchy(m_f[r], 0.1, current_size)
+        f = pyade.commons.truncated_cauchy(m_f[r], 0.1, current_size)
         if current_generation < 0.6 * max_iters:
             f = np.clip(f, 0, 0.7)
 
