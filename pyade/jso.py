@@ -141,21 +141,25 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         if len(indexes) > 0:
             weights = fitness[indexes] - c_fitness[indexes]
             weights[np.isinf(fitness[indexes]) & np.isinf(c_fitness[indexes])] = 0
-            assert np.all(weights > 0)
+            assert np.all(weights >= 0)
+
+            # If any are inf, treat these as 1 and everything else as 0.
             if np.any(np.isinf(weights)):
                 weights = np.isinf(weights).astype(weights.dtype)
-            weights /= np.sum(weights)
-            print(weights)
 
-            if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
-                m_cr[k] = 1   # `1` represents ⊥ in the paper
-            else:
-                m_cr[k] = (pyade.commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
-            m_f[k] = (pyade.commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
+            # Only update the memory if there was improvement.
+            if not np.all(weights == 0):
+                weights /= np.sum(weights)
 
-            k += 1
-            if k == memory_size:
-                k = 0
+                if m_cr[k] == 1 or np.max(cr[indexes]) == 0:
+                    m_cr[k] = 1   # `1` represents ⊥ in the paper
+                else:
+                    m_cr[k] = (pyade.commons.mean_wl(weights, cr[indexes]) + m_cr[k]) / 2
+                m_f[k] = (pyade.commons.mean_wl(weights, f[indexes]) + m_f[k]) / 2
+
+                k += 1
+                if k == memory_size:
+                    k = 0
 
         fitness[indexes] = c_fitness[indexes]
         # Adapt population size
