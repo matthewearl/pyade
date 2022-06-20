@@ -368,7 +368,7 @@ def selection(population: np.ndarray, new_population: np.ndarray,
     :return: The selection of the best of previous generation
      and mutated individual for the entire population and optionally, the indexes changed
     """
-    indexes = np.where(fitness > new_fitness)[0]
+    indexes = np.where(fitness >= new_fitness)[0]
     population[indexes] = new_population[indexes]
     if return_indexes:
         return population, indexes
