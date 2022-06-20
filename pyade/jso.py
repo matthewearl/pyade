@@ -140,6 +140,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         # 2.3 Adapt for next generation
         if len(indexes) > 0:
             weights = fitness[indexes] - c_fitness[indexes]
+            weights[np.isinf(fitness[indexes]) & np.isinf(c_fitness[indexes])] = 0
             assert np.all(weights > 0)
             if np.any(np.isinf(weights)):
                 weights = np.isinf(weights).astype(weights.dtype)
