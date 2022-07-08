@@ -247,7 +247,7 @@ def current_to_rand_1_mutation(population: np.ndarray,
     # 1. For each number, obtain 3 random integers that are not the number
     parents = __parents_choice(population, 3)
     # 2. Apply the formula to each set of parents
-    mutated = k * (population[parents[:, 0]] - population)
+    mutated = population + k * (population[parents[:, 0]] - population)
     mutated += f * (population[parents[:, 1]] - population[parents[:, 2]])
 
     return keep_bounds(mutated, bounds)
