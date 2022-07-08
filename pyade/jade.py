@@ -87,6 +87,8 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     for current_generation in range(max_iters):
         # 2.1 Generate parameter values for current generation
         cr = np.random.normal(u_cr, 0.1, population_size)
+        cr = np.clip(cr, 0, 1)
+
         f = pyade.commons.truncated_cauchy(np.ones(population_size) * u_f, 0.1, population_size)
 
         # 2.2 Common steps
