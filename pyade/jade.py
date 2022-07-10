@@ -15,12 +15,13 @@ def get_default_params(dim: int) -> dict:
     pop_size = 10 * dim
     return {'max_evals': 10000 * dim, 'individual_size': dim, 'callback': None,
             'population_size': pop_size, 'c': 0.1, 'p': max(.05, 3/pop_size), 'seed': None,
+            'accept_equal': False,
             'init': None}
 
 
 def apply(population_size: int, individual_size: int, bounds: np.ndarray,
           func: Callable[[np.ndarray], float], opts: Any,
-          p: Union[int, float], c: Union[int, float], callback: Callable[[Dict], Any],
+          p: Union[int, float], c: Union[int, float], accept_equal: bool, callback: Callable[[Dict], Any],
           max_evals: int, seed: Union[int, None], init: np.ndarray) -> [np.ndarray, int]:
     """
     Applies the JADE Differential Evolution algorithm.
@@ -41,6 +42,8 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
     :type p: Union[int, float]
     :param c: Variable to control parameter adoption. Must be in [0, 1].
     :type c: Union[int, float]
+    :param accept_equal: If true, accept proposals even if they do not lower (or increase) the fitness.  JADE as per the
+        paper has False for this parameter.
     :param callback: Optional function that allows read access to the state of all variables once each generation.
     :type callback: Callable[[Dict], Any]
     :param max_evals: Number of evaluations after the algorithm is stopped.
@@ -96,7 +99,7 @@ def apply(population_size: int, individual_size: int, bounds: np.ndarray,
         crossed = pyade.commons.crossover(population, mutated, cr.reshape(len(f), 1))
         c_fitness = pyade.commons.apply_fitness(crossed, func, opts)
         population, indexes = pyade.commons.selection(population, crossed,
-                                                      fitness, c_fitness, return_indexes=True)
+                                                      fitness, c_fitness, accept_equal, return_indexes=True)
 
         # 2.3 Adapt for next generation
         if len(indexes) != 0:

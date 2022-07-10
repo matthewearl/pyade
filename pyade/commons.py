@@ -352,6 +352,7 @@ def exponential_crossover(population: np.ndarray, mutated: np.ndarray,
 
 def selection(population: np.ndarray, new_population: np.ndarray,
               fitness: np.ndarray, new_fitness: np.ndarray,
+              accept_equal: bool=True,
               return_indexes: bool=False) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Selects the best individuals based on their fitness.
@@ -362,15 +363,23 @@ def selection(population: np.ndarray, new_population: np.ndarray,
     :param fitness: Last generation fitness.
     :type fitness: np.ndarray
     :param new_fitness: Current generation fitness
-    :param return_indexes: When active the function also returns the individual indexes that have been modified
+    :param accept_equal: If true, individuals will be accepted if their fitness has not changed.  Otherwise, individuals
+        must be strictly lower than before.
+    :param return_indexes: When active the function also returns the individual indexes that have (strictly) decreased
+        in fitness.
     :type return_indexes: bool
     :rtype: ndarray
     :return: The selection of the best of previous generation
      and mutated individual for the entire population and optionally, the indexes changed
     """
-    indexes = np.where(fitness >= new_fitness)[0]
+
+    gt_indexes = np.where(fitness > new_fitness)[0]
+    if accept_equal:
+        indexes = np.where(fitness >= new_fitness)[0]
+    else:
+        indexes = gt_indexes
     population[indexes] = new_population[indexes]
     if return_indexes:
-        return population, indexes
+        return population, gt_indexes
     else:
         return population
